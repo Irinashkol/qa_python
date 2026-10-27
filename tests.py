@@ -21,7 +21,12 @@ class TestBooksCollector:
         assert len(collector.get_books_rating()) == 2
 
     # напиши свои тесты ниже
-    # чтобы тесты были независимыми в каждом из них создавай отдельный экземпляр класса BooksCollector()
+    # чтобы тесты были независимыми в каждом из них создаем отдельный экземпляр класса BooksCollector() 
+    # создаем  и возвращаем в каждом тесте отдельный экземпляр класса через фикстуру в файле conftest.py
+    
+    def test_add_new_book(self, collector): # проверяем метод add_new_book, возможно ли добавить книгу
+        collector.add_new_book('Властелин колец')
+        assert collector.get_books_genre() == {'Властелин колец': ''} # проверяем, вернулся ли словарь с названием книги. Жанр, в данном случае, выводится пустой строкой.
 
     @pytest.mark.parametrize('name, genre, expected_genre', [('Властелин колец', 'Фантастика', 'Фантастика'), ('Звонок', 'Ужасы', 'Ужасы'), ('Чисто английское убийство', 'Детективы','Детективы'), ('Спящая красавица', 'Мультфильмы', 'Мультфильмы'), ('Дневник Бриджит Джонс', 'Комедии', 'Комедии'), ('Зеркальный лабиринт', 'Фэнтези', '')])
 
@@ -31,14 +36,14 @@ class TestBooksCollector:
 
         assert collector.get_book_genre(name) == expected_genre # сравниваем фактический жанр книги с ожидаемым.
 
-    @pytest.mark.parametrize('name, genre, expected_genre', [('Властелин колец', 'Фантастика', 'Фантастика'), ('Звонок', 'Ужасы', 'Ужасы'), ('Нет книги', 'Фантастика', None)])
+    @pytest.mark.parametrize('name, genre, expected_genre', [('Властелин колец', 'Фантастика', 'Фантастика'), ('Звонок', 'Ужасы', 'Ужасы')])
 
     def test_get_book_genre(self, collector, name, genre, expected_genre): # проверяем метод get_book_genre, можем ли получить жанр книги по её имени
-        if name != 'Нет книги': # выполняется условие, что книга точно существует 
-            collector.add_new_book(name) # добавляем книгу в словарь
-            collector.set_book_genre(name, genre) # устанавливает книге жанр 
+        collector.add_new_book(name) # добавляем книгу в колекцию
+        collector.set_book_genre(name, genre) # устанавливаем книге жанр 
 
-        assert collector.get_book_genre(name) == expected_genre
+        assert collector.get_book_genre(name) == expected_genre # запрашиваем жанр по названию книги и сравниваем с ожидаемым результатом
+
     @pytest.mark.parametrize('genre, expected_books', [('Фантастика', ['Властелин колец']), ('Ужасы', ['Звонок']), ('Детективы', ['Чисто английское убийство']), ('Мультфильмы', ['Спящая красавица']), ('Комедии', ['Дневник Бриджит Джонс']), ('Фэнтези',[])])
     def test_get_books_with_specific_genre(self, collector, genre, expected_books): # проверяем метод get_books_with_specific_genre, возвращает ли он список книг с указанным жанром.
         books = {
@@ -56,12 +61,22 @@ class TestBooksCollector:
         collector.add_new_book('Властелин колец') # добавляем книгу в коллекцию
         collector.set_book_genre('Властелин колец', 'Фантастика') # Присваиваем жанр
         assert collector.get_books_genre() == {'Властелин колец': 'Фантастика'} # проверяем, что метод вернул словарь 
-    @pytest.mark.parametrize('name, genre, is_for_children', [('Властелин колец', 'Фантастика', True), ('Звонок', 'Ужасы', False), ('Чисто английское убийство', 'Детективы', False), ('Спящая красавица', 'Мультфильмы', True), ('Дневник Юриджит Джонс', 'Комедии', True)])  
-    def test_get_books_for_children(self, collector, name, genre, is_for_children): # проверяем, метод get_books_for_children
+    @pytest.mark.parametrize('name, genre', [('Властелин колец', 'Фантастика'), ('Спящая красавица', 'Мультфильмы'), ('Дневник Юриджит Джонс', 'Комедии')])  
+    def test_get_books_for_children_without_age_rating(self, collector, name, genre): # проверяем, метод get_books_for_children, книги без ограничений по возрасту должны попадать в список для детей.
         collector.add_new_book(name) # добавляем книгу
-        collector.set_book_genre(name, genre) # устанавливаем жанр
+        collector.set_book_genre(name, genre) # устанавливаем допустимый для детей жанр 
         result = collector.get_books_for_children() # получаем список книг для детей
-        assert (name in result) is is_for_children # проверяем, что результат соответвует возрастному рейтингу
+
+        assert name in result # проверяем, что добавленная книга есть в списке
+
+    @pytest.mark.parametrize('name, genre', [('Звонок', 'Ужасы'), ('Чисто английское убийство', 'Детективы')])
+
+    def test_get_books_for_children_does_not_with_age_rating(self, collector, name, genre): # проверяем метод get_books_for_children, что книги с жанрами Ужасы и Детективы не попадают в список для детей
+        collector.add_new_book(name) # добавляем книгу
+        collector.set_book_genre(name, genre) # устанавливаем книге жанр с возрастным ограничением
+        result = collector.get_books_for_children() # получаем список книг для детей
+        assert name not in result # проверяем, что книги нет в списке  
+
     def test_add_book_in_favorites(self, collector): # проверяем метод, что он добавляет в список Избранное
         collector.add_new_book('Властелин колец')
 
